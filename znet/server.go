@@ -1,6 +1,7 @@
 package znet
 
 import (
+	"errors"
 	"fmt"
 	"net"
 	"zinx/ziface"
@@ -16,6 +17,17 @@ type Server struct {
 	IP string
 	// 监听的port
 	Port int
+}
+
+// CallBackToClient 定义当前客户端所绑定的handler api，目前是写死的，后面应该是留有接口，让用户提供
+func CallBackToClient(conn *net.TCPConn, data []byte, len int) error {
+	// 回写的业务
+	fmt.Println("[Conn handler] CallBackToClient")
+	if _, err := conn.Write(data[:len]); err != nil {
+		fmt.Println("CallBackToClient write err", err)
+		return errors.New("CallBackToClient err")
+	}
+	return nil
 }
 
 func (server *Server) Start() {
@@ -34,6 +46,8 @@ func (server *Server) Start() {
 			return
 		}
 		fmt.Println("start Zinx server success", server.Name, " Listening")
+		var cid uint32
+		cid = 0
 		// 3. 阻塞等待客户端进行连接，处理客户端连接业务
 		for {
 			// 如果没有客户端，会一直阻塞，有客户端的话就会阻塞返回
@@ -44,20 +58,9 @@ func (server *Server) Start() {
 			}
 			// 对客户端的连接进行处理，做一些业务，做一个回写的业务
 			// 最大512字节的长度
-			go func() {
-				for {
-					buf := make([]byte, 512)
-					len, err := conn.Read(buf)
-					if err != nil {
-						fmt.Println("Read err", err)
-						continue
-					}
-					if _, err := conn.Write(buf[:len]); err != nil {
-						fmt.Println("write back err", err)
-						continue
-					}
-				}
-			}()
+			dealConn := NewConnection(conn, cid, CallBackToClient)
+			go dealConn.Start()
+			cid++
 		}
 	}()
 
