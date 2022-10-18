@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	"zinx/utils"
 	"zinx/ziface"
 )
 
@@ -33,7 +34,7 @@ func CallBackToClient(conn *net.TCPConn, data []byte, len int) error {
 }
 
 func (server *Server) Start() {
-	fmt.Printf("[Start] Server listen at IP:%s, Port:%d\n", server.IP, server.Port)
+	fmt.Printf("[Start] Server%s listen at IP:%s, Port:%d\n", server.Name, server.IP, server.Port)
 	go func() {
 		// 1. 获取一个TCP的Addr，获取一个套接字
 		addr, err := net.ResolveTCPAddr(server.IPVersion, fmt.Sprintf("%s:%d", server.IP, server.Port))
@@ -91,12 +92,12 @@ func (server *Server) AddRouter(router ziface.IRouter) {
 	fmt.Println("Add Router down!")
 }
 
-func NewServer(name string) ziface.IServer {
+func NewServer() ziface.IServer {
 	return &Server{
-		Name:      name,
+		Name:      utils.GlobalConfig.Name,
 		IPVersion: "tcp4",
-		IP:        "0.0.0.0",
-		Port:      8999,
+		IP:        utils.GlobalConfig.Host,
+		Port:      utils.GlobalConfig.TcpPort,
 		Router:    nil,
 	}
 }

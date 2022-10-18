@@ -40,7 +40,7 @@ func (myRouter *MyRouter) PostHandle(request ziface.IRequest) {
 
 func TestZinx(t *testing.T) {
 	// 1. 创建一个server
-	s := znet.NewServer("zinx-v0.3")
+	s := znet.NewServer()
 	// 2. 启动server
 	s.AddRouter(&MyRouter{})
 	s.Serve()
