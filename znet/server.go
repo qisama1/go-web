@@ -17,6 +17,8 @@ type Server struct {
 	IP string
 	// 监听的port
 	Port int
+	// Router, 注册的连接对应的处理业务
+	Router ziface.IRouter
 }
 
 // CallBackToClient 定义当前客户端所绑定的handler api，目前是写死的，后面应该是留有接口，让用户提供
@@ -58,7 +60,7 @@ func (server *Server) Start() {
 			}
 			// 对客户端的连接进行处理，做一些业务，做一个回写的业务
 			// 最大512字节的长度
-			dealConn := NewConnection(conn, cid, CallBackToClient)
+			dealConn := NewConnection(conn, cid, server.Router)
 			go dealConn.Start()
 			cid++
 		}
@@ -84,11 +86,17 @@ func (server *Server) Init() {
 
 }
 
+func (server *Server) AddRouter(router ziface.IRouter) {
+	server.Router = router
+	fmt.Println("Add Router down!")
+}
+
 func NewServer(name string) ziface.IServer {
 	return &Server{
 		Name:      name,
 		IPVersion: "tcp4",
 		IP:        "0.0.0.0",
 		Port:      8999,
+		Router:    nil,
 	}
 }
