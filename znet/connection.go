@@ -1,9 +1,10 @@
 package znet
 
 import (
+	"errors"
 	"fmt"
+	"io"
 	"net"
-	"zinx/utils"
 	"zinx/ziface"
 )
 
@@ -29,15 +30,39 @@ func (c *Connection) StartReader() {
 
 	for {
 		// 读取客户端的数据到buf中，目前最大是512字节
-		buf := make([]byte, utils.GlobalConfig.MaxPackageSize)
-		cnt, err := c.Conn.Read(buf)
+		//buf := make([]byte, utils.GlobalConfig.MaxPackageSize)
+		//cnt, err := c.Conn.Read(buf)
+		//if err != nil {
+		//	fmt.Println("read err", err)
+		//	continue
+		//}
+		dp := NewDataPack()
+		msgHead := make([]byte, dp.GetHeadLen())
+		// 读取客户端的Msg Head -二进制流 8个字节
+		_, err := io.ReadFull(c.GetTcpConnection(), msgHead)
 		if err != nil {
-			fmt.Println("read err", err)
-			continue
+			fmt.Println("read msg head error", err)
+			break
 		}
+		// 拆包，得到msgID和msgDataLen放在msg对象消息中
+		msg, err := dp.Unpack(msgHead)
+		if err != nil {
+			fmt.Println("unpack err", err)
+			break
+		}
+		var data []byte
+		if msg.GetMessageLength() > 0 {
+			data = make([]byte, msg.GetMessageLength())
+			if _, err := io.ReadFull(c.GetTcpConnection(), data); err != nil {
+				fmt.Println("read msg data error", err)
+				break
+			}
+		}
+		msg.SetMessage(data)
+		// 得到真正的数据
 		req := &Request{
 			conn: c,
-			data: buf[:cnt],
+			data: msg,
 		}
 		// 开个协程去处理
 		go func() {
@@ -46,6 +71,30 @@ func (c *Connection) StartReader() {
 			c.Router.PostHandle(req)
 		}()
 	}
+}
+
+// SendMsg 提供SendMsg方法，将要给客户端发送的数据，先进行封包，再发送
+func (c *Connection) SendMsg(msgId uint32, data []byte) error {
+	if c.isClosed {
+		return errors.New("connection closed when send message")
+	}
+	// 将Data封包 len/id/data
+	dp := DataPack{}
+	msg, err := dp.Pack(&Message{
+		Id:      msgId,
+		DataLen: uint32(len(data)),
+		Data:    data,
+	})
+	if err != nil {
+		fmt.Println("pack err", err)
+		return err
+	}
+	// 将数据发送给客户端
+	if _, err := c.Conn.Write(msg); err != nil {
+		fmt.Println("write msg id", msgId, "error ", err)
+		return errors.New("conn write err")
+	}
+	return nil
 }
 
 func (c *Connection) Start() {
@@ -76,11 +125,6 @@ func (c *Connection) GetConnId() uint32 {
 
 func (c *Connection) GetRemoteAddr() net.Addr {
 	return c.Conn.RemoteAddr()
-}
-
-func (c *Connection) Send(data []byte) error {
-	//TODO implement me
-	panic("implement me")
 }
 
 func NewConnection(conn *net.TCPConn, connId uint32, router ziface.IRouter) *Connection {
