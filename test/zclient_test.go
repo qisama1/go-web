@@ -2,9 +2,11 @@ package test
 
 import (
 	"fmt"
+	"io"
 	"net"
 	"testing"
 	"time"
+	"zinx/znet"
 )
 
 /*
@@ -22,18 +24,45 @@ func TestClient(t *testing.T) {
 	}
 	// 2.连接调用write去写数据
 	for {
-		_, err := conn.Write([]byte("Hello Zinx V0.1"))
+		fmt.Println("client...")
+		dp := znet.NewDataPack()
+		binaryMsg, err := dp.Pack(&znet.Message{
+			Id:      0,
+			DataLen: uint32(len("ZinxV0.5 come")),
+			Data:    []byte("ZinxV0.5 come"),
+		})
 		if err != nil {
-			fmt.Println("write err", err)
+			fmt.Println("pack err", err)
 			return
 		}
-		buf := make([]byte, 512)
-		len, err := conn.Read(buf)
+		_, err = conn.Write(binaryMsg)
 		if err != nil {
-			fmt.Println("read buf err")
 			return
 		}
-		fmt.Printf("server call back %s, cnt := %d \n", buf[:len], len)
+		// 服务器给我们回复一个message， msgid为1
+		msgHead := make([]byte, dp.GetHeadLen())
+		// 读取客户端的Msg Head -二进制流 8个字节
+		_, err = io.ReadFull(conn, msgHead)
+		if err != nil {
+			fmt.Println("read msg head error", err)
+			break
+		}
+		// 拆包，得到msgID和msgDataLen放在msg对象消息中
+		msg, err := dp.Unpack(msgHead)
+		if err != nil {
+			fmt.Println("unpack err", err)
+			break
+		}
+		var data []byte
+		if msg.GetMessageLength() > 0 {
+			data = make([]byte, msg.GetMessageLength())
+			if _, err := io.ReadFull(conn, data); err != nil {
+				fmt.Println("read msg data error", err)
+				break
+			}
+		}
+		fmt.Println("rev message ", string(data))
+
 		time.Sleep(500 * time.Millisecond)
 	}
 }

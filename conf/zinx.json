@@ -1,5 +1,5 @@
 {
-  "Name": "demo server",
+  "Name": "demo server v0.5",
   "Host": "127.0.0.1",
   "TcpPort": 8999,
   "MaxConn": 3

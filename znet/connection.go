@@ -38,6 +38,7 @@ func (c *Connection) StartReader() {
 		//}
 		dp := NewDataPack()
 		msgHead := make([]byte, dp.GetHeadLen())
+
 		// 读取客户端的Msg Head -二进制流 8个字节
 		_, err := io.ReadFull(c.GetTcpConnection(), msgHead)
 		if err != nil {
@@ -58,6 +59,7 @@ func (c *Connection) StartReader() {
 				break
 			}
 		}
+
 		msg.SetMessage(data)
 		// 得到真正的数据
 		req := &Request{
