@@ -18,8 +18,8 @@ type Server struct {
 	IP string
 	// 监听的port
 	Port int
-	// Router, 注册的连接对应的处理业务
-	Router ziface.IRouter
+	// MsgHandler,其中集成了不同msg的对应的router
+	MsgHandler ziface.IMsgHandler
 }
 
 // CallBackToClient 定义当前客户端所绑定的handler api，目前是写死的，后面应该是留有接口，让用户提供
@@ -61,7 +61,7 @@ func (server *Server) Start() {
 			}
 			// 对客户端的连接进行处理，做一些业务，做一个回写的业务
 			// 最大512字节的长度
-			dealConn := NewConnection(conn, cid, server.Router)
+			dealConn := NewConnection(conn, cid, server.MsgHandler)
 			go dealConn.Start()
 			cid++
 		}
@@ -83,21 +83,20 @@ func (server *Server) Serve() {
 	select {}
 }
 
+func (server *Server) AddRouter(msgID uint32, router ziface.IRouter) {
+	server.MsgHandler.AddRouter(msgID, router)
+}
+
 func (server *Server) Init() {
 
 }
 
-func (server *Server) AddRouter(router ziface.IRouter) {
-	server.Router = router
-	fmt.Println("Add Router down!")
-}
-
 func NewServer() ziface.IServer {
 	return &Server{
-		Name:      utils.GlobalConfig.Name,
-		IPVersion: "tcp4",
-		IP:        utils.GlobalConfig.Host,
-		Port:      utils.GlobalConfig.TcpPort,
-		Router:    nil,
+		Name:       utils.GlobalConfig.Name,
+		IPVersion:  "tcp4",
+		IP:         utils.GlobalConfig.Host,
+		Port:       utils.GlobalConfig.TcpPort,
+		MsgHandler: NewMsgHandler(),
 	}
 }

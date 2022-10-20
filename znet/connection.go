@@ -19,7 +19,7 @@ type Connection struct {
 	// 告知连接已经停止的channel
 	ExitChan chan bool
 	// 该链接处理的方法
-	Router ziface.IRouter
+	MsgHandler ziface.IMsgHandler
 }
 
 // StartReader 连接的读业务方法
@@ -68,9 +68,7 @@ func (c *Connection) StartReader() {
 		}
 		// 开个协程去处理
 		go func() {
-			c.Router.PreHandle(req)
-			c.Router.Handler(req)
-			c.Router.PostHandle(req)
+			c.MsgHandler.DoMsgHandler(req)
 		}()
 	}
 }
@@ -129,12 +127,12 @@ func (c *Connection) GetRemoteAddr() net.Addr {
 	return c.Conn.RemoteAddr()
 }
 
-func NewConnection(conn *net.TCPConn, connId uint32, router ziface.IRouter) *Connection {
+func NewConnection(conn *net.TCPConn, connId uint32, router ziface.IMsgHandler) *Connection {
 	return &Connection{
-		Conn:     conn,
-		ConnID:   connId,
-		isClosed: false,
-		ExitChan: make(chan bool, 1),
-		Router:   router,
+		Conn:       conn,
+		ConnID:     connId,
+		isClosed:   false,
+		ExitChan:   make(chan bool, 1),
+		MsgHandler: router,
 	}
 }
