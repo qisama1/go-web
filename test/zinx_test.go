@@ -22,7 +22,7 @@ type MyRouter struct {
 
 // Handler 处理conn业务的主方法
 func (myRouter *MyRouter) Handler(request ziface.IRequest) {
-	fmt.Println("Handler")
+	fmt.Println("Handler xx 0.6")
 	err := request.GetConnection().SendMsg(1, []byte("ping...\n"))
 	//_, err := request.GetConnection().GetTcpConnection().Write([]byte("ping...\n"))
 	if err != nil {
@@ -43,6 +43,6 @@ func TestZinx(t *testing.T) {
 	// 1. 创建一个server
 	s := znet.NewServer()
 	// 2. 启动server
-	s.AddRouter(&MyRouter{})
+	s.AddRouter(0, &MyRouter{})
 	s.Serve()
 }
