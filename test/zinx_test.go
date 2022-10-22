@@ -44,5 +44,11 @@ func TestZinx(t *testing.T) {
 	s := znet.NewServer()
 	// 2. 启动server
 	s.AddRouter(0, &MyRouter{})
+	s.RegistryInitMethod(func(conn ziface.IConnection) {
+		fmt.Println(conn.GetConnId(), "新建")
+	})
+	s.RegistryDestroyMethod(func(conn ziface.IConnection) {
+		fmt.Println(conn.GetConnId(), "销毁")
+	})
 	s.Serve()
 }

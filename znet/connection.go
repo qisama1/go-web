@@ -138,6 +138,7 @@ func (c *Connection) Stop() {
 		return
 	}
 	// 关闭连接
+	c.Server.CallDestroyMethod(c)
 	c.Conn.Close()
 	c.isClosed = true
 	// 回收资源
@@ -161,6 +162,7 @@ func (c *Connection) GetRemoteAddr() net.Addr {
 }
 
 func NewConnection(server ziface.IServer, conn *net.TCPConn, connId uint32, router ziface.IMsgHandler) *Connection {
+
 	connection := &Connection{
 		Server:     server,
 		Conn:       conn,
@@ -170,6 +172,7 @@ func NewConnection(server ziface.IServer, conn *net.TCPConn, connId uint32, rout
 		MsgHandler: router,
 		MsgChannel: make(chan []byte),
 	}
+	server.CallInitMethod(connection)
 	server.GetConnectionManager().Add(connection)
 	return connection
 }

@@ -14,4 +14,8 @@ type IServer interface {
 	AddRouter(msgId uint32, router IRouter)
 	// GetConnectionManager 获取连接管理器
 	GetConnectionManager() IConnectionManager
+	RegistryInitMethod(initMethod func(conn IConnection))
+	RegistryDestroyMethod(initMethod func(conn IConnection))
+	CallInitMethod(conn IConnection)
+	CallDestroyMethod(conn IConnection)
 }

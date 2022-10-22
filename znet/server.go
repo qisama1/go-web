@@ -22,6 +22,10 @@ type Server struct {
 	MsgHandler ziface.IMsgHandler
 	// 连接管理器
 	ConnectionManager ziface.IConnectionManager
+	// initMethod
+	InitMethod func(conn ziface.IConnection)
+	// destroyMethod
+	DestroyMethod func(conn ziface.IConnection)
 }
 
 // CallBackToClient 定义当前客户端所绑定的handler api，目前是写死的，后面应该是留有接口，让用户提供
@@ -118,5 +122,25 @@ func NewServer() ziface.IServer {
 		Port:              utils.GlobalConfig.TcpPort,
 		MsgHandler:        NewMsgHandler(),
 		ConnectionManager: NewConnectionManager(),
+	}
+}
+
+func (server *Server) RegistryInitMethod(initMethod func(conn ziface.IConnection)) {
+	server.InitMethod = initMethod
+}
+
+func (server *Server) RegistryDestroyMethod(destroyMethod func(conn ziface.IConnection)) {
+	server.DestroyMethod = destroyMethod
+}
+
+func (server *Server) CallInitMethod(conn ziface.IConnection) {
+	if server.InitMethod != nil {
+		server.InitMethod(conn)
+	}
+}
+
+func (server *Server) CallDestroyMethod(conn ziface.IConnection) {
+	if server.DestroyMethod != nil {
+		server.DestroyMethod(conn)
 	}
 }
