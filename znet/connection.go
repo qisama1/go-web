@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"net"
+	"sync"
 	"zinx/utils"
 	"zinx/ziface"
 )
@@ -25,6 +26,10 @@ type Connection struct {
 	MsgHandler ziface.IMsgHandler
 	// 进行通信的channel
 	MsgChannel chan []byte
+	// 连接属性集合
+	Attributes map[string]interface{}
+	// 连接属性修改的lock
+	AttrLock sync.RWMutex
 }
 
 // StartReader 连接的读业务方法
@@ -149,6 +154,28 @@ func (c *Connection) Stop() {
 	close(c.MsgChannel)
 }
 
+func (c *Connection) SetProperty(key string, value interface{}) {
+	c.AttrLock.Lock()
+	defer c.AttrLock.Unlock()
+	c.Attributes[key] = value
+}
+
+func (c *Connection) GetProperty(key string) (interface{}, error) {
+	c.AttrLock.RLock()
+	defer c.AttrLock.RUnlock()
+	if v, ok := c.Attributes[key]; ok {
+		return v, nil
+	} else {
+		return nil, errors.New("invalid key")
+	}
+}
+
+func (c *Connection) RemoveProperty(key string) {
+	c.AttrLock.Lock()
+	defer c.AttrLock.Unlock()
+	delete(c.Attributes, key)
+}
+
 func (c *Connection) GetTcpConnection() *net.TCPConn {
 	return c.Conn
 }
@@ -171,6 +198,8 @@ func NewConnection(server ziface.IServer, conn *net.TCPConn, connId uint32, rout
 		ExitChan:   make(chan bool, 1),
 		MsgHandler: router,
 		MsgChannel: make(chan []byte),
+		Attributes: make(map[string]interface{}),
+		AttrLock:   sync.RWMutex{},
 	}
 	server.CallInitMethod(connection)
 	server.GetConnectionManager().Add(connection)

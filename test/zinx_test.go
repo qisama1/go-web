@@ -48,6 +48,7 @@ func TestZinx(t *testing.T) {
 		fmt.Println(conn.GetConnId(), "新建")
 	})
 	s.RegistryDestroyMethod(func(conn ziface.IConnection) {
+		conn.SetProperty("name", "this function is nice")
 		fmt.Println(conn.GetConnId(), "销毁")
 	})
 	s.Serve()
