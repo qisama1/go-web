@@ -18,6 +18,8 @@ type GlobalObj struct {
 	Version        string // 当前zinx的版本号
 	MaxConn        int    // 当前服务器主机允许的最大连接数
 	MaxPackageSize uint32 // 当前一次传输允许的最大值
+	WorkPoolSize   uint32 // worker数量
+	MaxWorkTaskLen uint32 // 用户能够最对开辟多少
 }
 
 var GlobalConfig *GlobalObj
@@ -32,6 +34,8 @@ func init() {
 		Host:           "0.0.0.0",
 		MaxConn:        1000,
 		MaxPackageSize: 4096,
+		WorkPoolSize:   16,
+		MaxWorkTaskLen: 20,
 	}
 	// 从配置文件中加载
 	GlobalConfig.Reload()

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"net"
+	"zinx/utils"
 	"zinx/ziface"
 )
 
@@ -69,9 +70,14 @@ func (c *Connection) StartReader() {
 			data: msg,
 		}
 		// 开个协程去处理
-		go func() {
+		// 把消息交给工作池
+		if utils.GlobalConfig.WorkPoolSize > 0 {
+			go c.MsgHandler.AddRequest(req.conn.GetConnId(), req)
+		} else {
+			// 如果没开启线程工作池，就单独去处理咯
 			c.MsgHandler.DoMsgHandler(req)
-		}()
+		}
+
 	}
 }
 

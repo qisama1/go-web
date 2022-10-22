@@ -36,6 +36,9 @@ func CallBackToClient(conn *net.TCPConn, data []byte, len int) error {
 func (server *Server) Start() {
 	fmt.Printf("[Start] Server%s listen at IP:%s, Port:%d\n", server.Name, server.IP, server.Port)
 	go func() {
+		// 0. 开启消息队列及Worker工作池
+		server.MsgHandler.StartWorkerPool()
+
 		// 1. 获取一个TCP的Addr，获取一个套接字
 		addr, err := net.ResolveTCPAddr(server.IPVersion, fmt.Sprintf("%s:%d", server.IP, server.Port))
 		if err != nil {
