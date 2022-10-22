@@ -11,6 +11,8 @@ import (
 
 // Connection /**
 type Connection struct {
+	// 当前的Conn属于哪个server
+	Server ziface.IServer
 	// 当前连接的socket TCP套接字
 	Conn *net.TCPConn
 	// 连接的ID
@@ -140,6 +142,8 @@ func (c *Connection) Stop() {
 	c.isClosed = true
 	// 回收资源
 	c.ExitChan <- true
+	// 把连接管理器中的conn移除
+	c.Server.GetConnectionManager().Remove(c)
 	close(c.ExitChan)
 	close(c.MsgChannel)
 }
@@ -156,8 +160,9 @@ func (c *Connection) GetRemoteAddr() net.Addr {
 	return c.Conn.RemoteAddr()
 }
 
-func NewConnection(conn *net.TCPConn, connId uint32, router ziface.IMsgHandler) *Connection {
+func NewConnection(server ziface.IServer, conn *net.TCPConn, connId uint32, router ziface.IMsgHandler) *Connection {
 	return &Connection{
+		Server:     server,
 		Conn:       conn,
 		ConnID:     connId,
 		isClosed:   false,

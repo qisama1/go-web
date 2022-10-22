@@ -12,4 +12,6 @@ type IServer interface {
 	Serve()
 	// AddRouter 添加路由
 	AddRouter(msgId uint32, router IRouter)
+	// GetConnectionManager 获取连接管理器
+	GetConnectionManager() IConnectionManager
 }

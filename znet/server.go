@@ -20,6 +20,8 @@ type Server struct {
 	Port int
 	// MsgHandler,其中集成了不同msg的对应的router
 	MsgHandler ziface.IMsgHandler
+	// 连接管理器
+	ConnectionManager ziface.IConnectionManager
 }
 
 // CallBackToClient 定义当前客户端所绑定的handler api，目前是写死的，后面应该是留有接口，让用户提供
@@ -62,9 +64,16 @@ func (server *Server) Start() {
 				fmt.Println("Accept err", err)
 				continue
 			}
+			// 新建连接的时候，考虑是不是超过了最大个数，如果超出了最大连接数，关闭这次连接
+			if server.ConnectionManager.Len() >= utils.GlobalConfig.MaxConn {
+				// TODO 告知用户
+				fmt.Println("conn too much")
+				conn.Close()
+				continue
+			}
 			// 对客户端的连接进行处理，做一些业务，做一个回写的业务
 			// 最大512字节的长度
-			dealConn := NewConnection(conn, cid, server.MsgHandler)
+			dealConn := NewConnection(server, conn, cid, server.MsgHandler)
 			go dealConn.Start()
 			cid++
 		}
@@ -74,6 +83,8 @@ func (server *Server) Start() {
 
 func (server *Server) Stop() {
 	// TODO 将服务器的资源关闭
+	fmt.Println("[STOP]")
+	server.ConnectionManager.Clear()
 }
 
 func (server *Server) Serve() {
@@ -94,12 +105,17 @@ func (server *Server) Init() {
 
 }
 
+func (server *Server) GetConnectionManager() ziface.IConnectionManager {
+	return server.ConnectionManager
+}
+
 func NewServer() ziface.IServer {
 	return &Server{
-		Name:       utils.GlobalConfig.Name,
-		IPVersion:  "tcp4",
-		IP:         utils.GlobalConfig.Host,
-		Port:       utils.GlobalConfig.TcpPort,
-		MsgHandler: NewMsgHandler(),
+		Name:              utils.GlobalConfig.Name,
+		IPVersion:         "tcp4",
+		IP:                utils.GlobalConfig.Host,
+		Port:              utils.GlobalConfig.TcpPort,
+		MsgHandler:        NewMsgHandler(),
+		ConnectionManager: NewConnectionManager(),
 	}
 }
