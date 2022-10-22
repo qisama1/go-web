@@ -161,7 +161,7 @@ func (c *Connection) GetRemoteAddr() net.Addr {
 }
 
 func NewConnection(server ziface.IServer, conn *net.TCPConn, connId uint32, router ziface.IMsgHandler) *Connection {
-	return &Connection{
+	connection := &Connection{
 		Server:     server,
 		Conn:       conn,
 		ConnID:     connId,
@@ -170,4 +170,6 @@ func NewConnection(server ziface.IServer, conn *net.TCPConn, connId uint32, rout
 		MsgHandler: router,
 		MsgChannel: make(chan []byte),
 	}
+	server.GetConnectionManager().Add(connection)
+	return connection
 }

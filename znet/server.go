@@ -65,6 +65,7 @@ func (server *Server) Start() {
 				continue
 			}
 			// 新建连接的时候，考虑是不是超过了最大个数，如果超出了最大连接数，关闭这次连接
+			fmt.Println(server.ConnectionManager.Len(), " 有多少个连接现在")
 			if server.ConnectionManager.Len() >= utils.GlobalConfig.MaxConn {
 				// TODO 告知用户
 				fmt.Println("conn too much")
